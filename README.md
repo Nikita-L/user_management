@@ -152,6 +152,10 @@ Run tests:
 ```bash
 make test
 ```
+Shut down all containers:
+```bash
+make down
+```
 
 ---
 
