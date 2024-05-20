@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  api:
+    ports:
+      # Exposes application port.
+    - "8000:8000"
+    build:
+      target: dev
+    volumes:
+      # Adds current directory as volume.
+    - .:/app/src/
+    environment:
+      # Enables autoreload.
+      USER_MANAGEMENT_RELOAD: "True"
+
+  db:
+    image: postgres:13.8-bullseye
+    hostname: user_management-db
+    ports:
+      # Exposes application port.
+    - "5454:5432"
+    environment:
+      POSTGRES_PASSWORD: "user_management"
+      POSTGRES_USER: "user_management"
+      POSTGRES_DB: "user_management"
+    volumes:
+    - user_management-db-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: pg_isready -U user_management
+      interval: 2s
+      timeout: 3s
+      retries: 40

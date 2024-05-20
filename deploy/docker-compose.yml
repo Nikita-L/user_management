@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+      target: prod
+    image: user_management:${USER_MANAGEMENT_VERSION:-latest}
+    restart: always
+    env_file:
+    - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      USER_MANAGEMENT_HOST: 0.0.0.0
+      USER_MANAGEMENT_DB_HOST: user_management-db
+      USER_MANAGEMENT_DB_PORT: 5432
+      USER_MANAGEMENT_DB_USER: user_management
+      USER_MANAGEMENT_DB_PASS: user_management
+      USER_MANAGEMENT_DB_BASE: user_management
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.datecron.schedule: "@every 10s"
+      ofelia.job-exec.datecron.command: "poetry run process_events"
+
+  db:
+    image: postgres:13.8-bullseye
+    hostname: user_management-db
+    environment:
+      POSTGRES_PASSWORD: "user_management"
+      POSTGRES_USER: "user_management"
+      POSTGRES_DB: "user_management"
+    volumes:
+    - user_management-db-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: pg_isready -U user_management
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+  migrator:
+    image: user_management:${USER_MANAGEMENT_VERSION:-latest}
+    restart: "no"
+    command: alembic upgrade head
+    environment:
+      USER_MANAGEMENT_DB_HOST: user_management-db
+      USER_MANAGEMENT_DB_PORT: 5432
+      USER_MANAGEMENT_DB_USER: user_management
+      USER_MANAGEMENT_DB_PASS: user_management
+      USER_MANAGEMENT_DB_BASE: user_management
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ofelia:
+    image: mcuadros/ofelia:latest
+    depends_on:
+    - api
+    command: daemon --docker
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  user_management-db-data:
+    name: user_management-db-data
