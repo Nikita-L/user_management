@@ -20,6 +20,7 @@ Requirements:
 - [docker](https://docs.docker.com/engine/install/)
 - [docker-compose](https://docs.docker.com/compose/install/)
 - [Makefile](https://www.gnu.org/software/make/)
+- [Curl](https://curl.se/) for testing
 
 1. Create [WorkOS](https://dashboard.workos.com/signup) account.
 2. Create `.env` file in project folder and copy `WORKOS_CLIENT_ID` and `WORKOS_API_KEY` from [Overview page](https://dashboard.workos.com/get-started).
@@ -36,7 +37,110 @@ make up
 make logs
 ```
 
-API docs: http://0.0.0.0:8000/api/docs
+API docs: http://0.0.0.0:8000/docs
+
+### Test creation sync
+
+Get current users:
+```bash
+curl -X 'GET' \
+  'http://0.0.0.0:8000/users/?skip=0&limit=10' \
+  -H 'accept: application/json'
+```
+
+Create user using WorkOS using `WORKOS_API_KEY` from previous steps:
+```bash
+curl --request POST \
+  --url https://api.workos.com/user_management/users \
+  -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com"}'
+```
+
+After up to 10 seconds, verify created user is available through API:
+```bash
+curl -X 'GET' \
+  'http://0.0.0.0:8000/users/?skip=0&limit=10' \
+  -H 'accept: application/json'
+```
+
+### Test update sync
+
+Get any user id:
+```bash
+curl -X 'GET' \
+  'http://0.0.0.0:8000/users/?skip=0&limit=10' \
+  -H 'accept: application/json'
+```
+
+Update user by user id using WorkOS using `WORKOS_API_KEY` from previous steps:
+```bash
+curl --request PUT \
+  --url https://api.workos.com/user_management/users/<user-id> \
+  -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"first_name":"New First Name"}'
+```
+
+After up to 10 seconds, verify updated user is available through API:
+```bash
+curl -X 'GET' \
+  'http://0.0.0.0:8000/users/?skip=0&limit=10' \
+  -H 'accept: application/json'
+```
+
+### Test delete sync
+
+Get any user id:
+```bash
+curl -X 'GET' \
+  'http://0.0.0.0:8000/users/?skip=0&limit=10' \
+  -H 'accept: application/json'
+```
+
+Update user by user id using WorkOS using `WORKOS_API_KEY` from previous steps:
+```bash
+curl --request DELETE \
+  --url https://api.workos.com/user_management/users/<user-id> \
+  -H "Authorization: Bearer <your-api-key>"
+```
+
+After up to 10 seconds, verify user is deleted:
+```bash
+curl -X 'GET' \
+  'http://0.0.0.0:8000/users/?skip=0&limit=10' \
+  -H 'accept: application/json'
+```
+
+### Test user creation through API
+
+Get current users:
+```bash
+curl -X 'GET' \
+  'http://0.0.0.0:8000/users/?skip=0&limit=10' \
+  -H 'accept: application/json'
+```
+
+Create user using API:
+```bash
+curl -X 'POST' \
+  'http://0.0.0.0:8000/users/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "email": "test_api@test.com",
+  "password": "SomeStrongPass123#",
+  "first_name": "Test First Name",
+  "last_name": "Test Last Name"
+}'
+```
+
+After up to 10 seconds, verify created user is available through API:
+```bash
+curl -X 'GET' \
+  'http://0.0.0.0:8000/users/?skip=0&limit=10' \
+  -H 'accept: application/json'
+```
 
 ---
 
@@ -66,7 +170,7 @@ poetry run python -m user_management
 
 This will start the server on the configured host.
 
-You can find swagger documentation at `/api/docs`.
+You can find swagger documentation at `/docs`.
 
 You can read more about poetry here: https://python-poetry.org/
 
